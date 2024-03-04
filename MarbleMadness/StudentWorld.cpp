@@ -228,7 +228,36 @@ bool StudentWorld::playerInView(double x, double y, int direction)
     }
     return false;
 }
+// adds amount of ammo to player
+void StudentWorld::addAmmo(int amt)
+{
+    vector<Actor *>::iterator it;
+    it = actors.begin();
 
+    while (it != actors.end())
+    {
+        if ((*it)->canControl())
+        {
+            (*it)->addPeas(amt);
+        }
+        it++;
+    }
+}
+// adds amount of ammo to player
+void StudentWorld::restoreHealth()
+{
+    vector<Actor *>::iterator it;
+    it = actors.begin();
+
+    while (it != actors.end())
+    {
+        if ((*it)->canControl())
+        {
+            (*it)->addHealth();
+        }
+        it++;
+    }
+}
 // returns the amount of crystals left
 int StudentWorld::crystalsLeft()
 {
@@ -393,19 +422,19 @@ int StudentWorld::init()
                 }
                 case Level::restore_health:
                 {
-                    RestoreHealth *restoreHealth = new RestoreHealth(x, y, -1, 1);
+                    RestoreHealth *restoreHealth = new RestoreHealth(x, y, -1, 1, this);
                     actors.push_back(restoreHealth);
                     break;
                 }
                 case Level::extra_life:
                 {
-                    ExtraLife *extraLife = new ExtraLife(x, y, -1, 1);
+                    ExtraLife *extraLife = new ExtraLife(x, y, -1, 1, this);
                     actors.push_back(extraLife);
                     break;
                 }
                 case Level::ammo:
                 {
-                    Ammo *ammo = new Ammo(x, y, -1, 1);
+                    Ammo *ammo = new Ammo(x, y, -1, 1, this);
                     actors.push_back(ammo);
                     break;
                 }

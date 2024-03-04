@@ -17,6 +17,8 @@ public:
     virtual bool canShootThrough(); // true for Pickupable itme, 0 everthing else
     virtual int ammoAmount(); // defaulted 0 for everyone but player
     virtual int getHealth();
+    virtual void addHealth();
+    virtual void addPeas(int num);
     virtual bool canControl(); // to identify player
     virtual void recieveDamage();
     bool isDead();
@@ -38,7 +40,8 @@ public:
     virtual void recieveDamage();
     virtual int ammoAmount();
     virtual int getHealth();
-    void addPeas(int num);
+    virtual void addHealth();
+    virtual void addPeas(int num);
 
 private:
     StudentWorld *m_studentWorld;
@@ -114,6 +117,7 @@ public:
     Pit(double startX, double startY, int dir, double size, StudentWorld *studentWorld);
     virtual int canWalkThrough();
     virtual int canMarbleThrough();
+    virtual bool canShootThrough();
     virtual void doSomething();
 
 private:
@@ -169,25 +173,39 @@ private:
 class Goodie : public PickupableItem
 {
 public:
-    Goodie(int imageID, double startX, double startY, int dir, double size);
+    Goodie(int imageID, double startX, double startY, int dir, double size, StudentWorld* studentWorld, int scoreAmount);
+    virtual void doSomething();
+    virtual void updatePlayerStat() = 0;
+private:
+    StudentWorld* m_studentWorld;
+    int m_scoreAmount;
 };
 
 class ExtraLife : public Goodie
 {
 public:
-    ExtraLife(double startX, double startY, int dir, double size);
+    ExtraLife(double startX, double startY, int dir, double size, StudentWorld* studentWorld);
+    virtual void updatePlayerStat();
+private:
+    StudentWorld* m_studentWorld;
 };
 
 class RestoreHealth : public Goodie
 {
 public:
-    RestoreHealth(double startX, double startY, int dir, double size);
+    RestoreHealth(double startX, double startY, int dir, double size, StudentWorld* studentWorld);
+    virtual void updatePlayerStat();
+private:
+    StudentWorld* m_studentWorld;
 };
 
 class Ammo : public Goodie
 {
 public:
-    Ammo(double startX, double startY, int dir, double size);
+    Ammo(double startX, double startY, int dir, double size, StudentWorld* studentWorld);
+    virtual void updatePlayerStat();
+private:
+    StudentWorld* m_studentWorld;
 };
 
 #endif // ACTOR_H_

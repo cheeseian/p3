@@ -27,6 +27,8 @@ public:
   bool checkPeaSquare(double x, double y);
   bool checkIfPlayerAt(double x, double y);
   bool playerInView(double x, double y, int direction);
+  void addAmmo(int amt);
+  void restoreHealth();
   int crystalsLeft();
   void subtractCrystal();
   void setDisplayText();

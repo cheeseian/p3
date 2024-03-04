@@ -43,6 +43,14 @@ int Actor::getHealth()
 {
     return 0; // default has no health
 }
+void Actor::addPeas(int num)
+{
+    return;
+}
+void Actor::addHealth()
+{
+    return;
+}
 bool Actor::canControl()
 {
     return false; // can't control most actors
@@ -89,6 +97,11 @@ int Avatar::ammoAmount()
 int Avatar::getHealth()
 {
     return m_hitPoints;
+}
+void Avatar::addHealth()
+{ 
+    m_hitPoints = 20;
+
 }
 void Avatar::addPeas(int num)
 {
@@ -298,6 +311,10 @@ int Pit::canMarbleThrough()
 {
     return 1;
 }
+bool Pit::canShootThrough()
+{
+    return true; // can shoot over pits;
+}
 void Pit::doSomething()
 {
     if (m_studentWorld->checkIfMarbleAt(getX(), getY()))
@@ -392,25 +409,47 @@ void Crystal::doSomething()
 }
 
 // Goodie implementation
-Goodie::Goodie(int imageID, double startX, double startY, int dir, double size)
-    : PickupableItem(imageID, startX, startY, dir, size)
+Goodie::Goodie(int imageID, double startX, double startY, int dir, double size, StudentWorld* studentWorld, int scoreAmount)
+    : PickupableItem(imageID, startX, startY, dir, size), m_studentWorld(studentWorld), m_scoreAmount(scoreAmount)
 {
 }
-
-// Extra life goodie implementation
-ExtraLife::ExtraLife(double startX, double startY, int dir, double size)
-    : Goodie(IID_EXTRA_LIFE, startX, startY, dir, size)
+void Goodie::doSomething()
 {
+    if (isDead())
+        return;
+    if (m_studentWorld->checkIfPlayerAt(getX(), getY()))
+    {
+        m_studentWorld->increaseScore(m_scoreAmount);
+        updatePlayerStat();
+        setDead();
+        // play sound effect
+    }
+}
+// Extra life goodie implementation
+ExtraLife::ExtraLife(double startX, double startY, int dir, double size, StudentWorld* studentWorld)
+    : Goodie(IID_EXTRA_LIFE, startX, startY, dir, size, studentWorld, 1000), m_studentWorld(studentWorld)
+{
+}
+void ExtraLife::updatePlayerStat()
+{
+    m_studentWorld->incLives();
 }
 
 // Restore Health implementation
-RestoreHealth::RestoreHealth(double startX, double startY, int dir, double size)
-    : Goodie(IID_RESTORE_HEALTH, startX, startY, dir, size)
+RestoreHealth::RestoreHealth(double startX, double startY, int dir, double size, StudentWorld* studentWorld)
+    : Goodie(IID_RESTORE_HEALTH, startX, startY, dir, size, studentWorld, 500), m_studentWorld(studentWorld)
 {
 }
-
-// Ammo implementation
-Ammo::Ammo(double startX, double startY, int dir, double size)
-    : Goodie(IID_AMMO, startX, startY, dir, size)
+void RestoreHealth::updatePlayerStat()
 {
+    m_studentWorld->restoreHealth();
+}
+// Ammo implementation
+Ammo::Ammo(double startX, double startY, int dir, double size, StudentWorld* studentWorld)
+    : Goodie(IID_AMMO, startX, startY, dir, size, studentWorld, 100), m_studentWorld(studentWorld)
+{
+}
+void Ammo::updatePlayerStat()
+{
+    m_studentWorld->addAmmo(20);
 }
