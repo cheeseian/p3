@@ -55,6 +55,14 @@ bool Actor::canControl()
 {
     return false; // can't control most actors
 }
+bool Actor::canBeMunched()
+{
+    return false;
+}
+bool Actor::canMunch()
+{
+    return false;
+}
 void Actor::recieveDamage()
 {
     return; // default deal no damage
@@ -84,9 +92,11 @@ bool Avatar::canShootThrough()
 }
 void Avatar::recieveDamage()
 {
+    m_studentWorld->playSound(SOUND_PLAYER_IMPACT);
     m_hitPoints -= 2;
     if (m_hitPoints <= 0)
     {
+        m_studentWorld->playSound(SOUND_PLAYER_DIE);
         setDead();
     }
 }
@@ -111,7 +121,6 @@ void Avatar::addPeas(int num)
 
 void Avatar::doSomething()
 {
-    cerr << "is the player dead? " << isDead() << endl;
     if (isDead())
         return;
     // if a key is pressed, move in corresponding direction
@@ -154,6 +163,7 @@ void Avatar::doSomething()
             if (!(ammoAmount() <= 0))
             {
                 m_studentWorld->shootPea(getX(), getY(), getDirection());
+                m_studentWorld->playSound(SOUND_PLAYER_FIRE);
                 addPeas(-1);
             }
             break;
@@ -181,9 +191,11 @@ int Robot::isCollideable()
 }
 void Robot::recieveDamage()
 {
+    m_studentWorld->playSound(SOUND_ROBOT_IMPACT);
     m_hitPoints -= 2;
     if (m_hitPoints <= 0)
     {
+        m_studentWorld->playSound(SOUND_ROBOT_DIE);
         setDead();
     }
 }
@@ -213,6 +225,7 @@ void RageBot::doSomething()
         // check if player is in vision, if so shoot a pea
         if (m_studentWorld->playerInView(getX(), getY(), getDirection()))
         {
+            m_studentWorld->playSound(SOUND_ENEMY_FIRE);
             m_studentWorld->shootPea(getX(), getY(), getDirection());
             return;
         }
@@ -246,19 +259,40 @@ void RageBot::doSomething()
 
 // ThiefBot implementation
 ThiefBot::ThiefBot(int imageID, double startX, double startY, int dir, double size, StudentWorld *studentWorld)
-    : Robot(imageID, startX, startY, dir, size, studentWorld)
+    : Robot(imageID, startX, startY, dir, size, studentWorld), m_studentWorld(studentWorld), m_carryingGoodie(false)
 {
+    distanceBeforeTurning = randInt(1, 6);
+    setVisible(true);
+}
+bool ThiefBot::canMunch()
+{
+    return true;
+}
+void ThiefBot::doSomething()
+{
+    if (isDead())
+        return;
+    if (isActiveTick())
+    {
+        if (!m_carryingGoodie && m_studentWorld->tryToMunch(getX(), getY()))
+        {
+            m_carryingGoodie = true;
+            return; // ends action if successful munch happens
+        }
+
+        
+    }
 }
 
 // RegularThiefBot implementation
 RegularThiefBot::RegularThiefBot(double startX, double startY, int dir, double size, StudentWorld *studentWorld)
-    : ThiefBot(IID_THIEFBOT, startX, startY, dir, size, studentWorld)
+    : ThiefBot(IID_THIEFBOT, startX, startY, dir, size, studentWorld), m_hitPoints(5)
 {
 }
 
 // MeanThiefBot implementation
 MeanThiefBot::MeanThiefBot(double startX, double startY, int dir, double size, StudentWorld *studentWorld)
-    : ThiefBot(IID_MEAN_THIEFBOT, startX, startY, dir, size, studentWorld)
+    : ThiefBot(IID_MEAN_THIEFBOT, startX, startY, dir, size, studentWorld), m_hitPoints(8)
 {
 }
 
@@ -336,11 +370,13 @@ void Exit::doSomething()
 {
     if (m_studentWorld->crystalsLeft() <= 0)
     {
+        m_studentWorld->playSound(SOUND_REVEAL_EXIT);
         m_isVisible = true;
         setVisible(true);
     }
     if (m_isVisible && m_studentWorld->checkIfPlayerAt(getX(), getY()))
     {
+        m_studentWorld->playSound(SOUND_FINISHED_LEVEL);
         m_studentWorld->levelComplete();
     }
 
@@ -361,7 +397,6 @@ void Pea::doSomething()
 
     if (m_studentWorld->checkPeaSquare(getX(), getY()))
     {
-        cerr << "pea should be dead" << endl;
         setDead();
         return;
     }
@@ -373,8 +408,8 @@ void Pea::doSomething()
 }
 
 // Thief Bot Factory implementation
-ThiefBotFactory::ThiefBotFactory(double startX, double startY, int dir, double size, bool isMean)
-    : Actor(IID_ROBOT_FACTORY, startX, startY, dir, size), m_isMean(isMean)
+ThiefBotFactory::ThiefBotFactory(double startX, double startY, int dir, double size, bool isMean, StudentWorld* studentWorld)
+    : Actor(IID_ROBOT_FACTORY, startX, startY, dir, size), m_isMean(isMean), m_studentWorld(studentWorld)
 {
     setVisible(true);
 }
@@ -386,7 +421,16 @@ int ThiefBotFactory::isCollideable()
 {
     return 1; // is collideable, not damageable.
 }
-
+void ThiefBotFactory::doSomething()
+{
+    if(m_studentWorld->countThiefBots(getX(), getY()) < 3)
+    {
+        if(randInt(1, 50) == 1)
+        {
+            m_studentWorld->spawnThiefBot(getX(), getY(), m_isMean);
+        }
+    }
+}
 // Pickupable Item
 PickupableItem::PickupableItem(int imageID, double startX, double startY, int dir, double size)
     : Actor(imageID, startX, startY, dir, size)
@@ -409,6 +453,7 @@ void Crystal::doSomething()
         return;
     if(m_studentWorld->checkIfPlayerAt(getX(), getY()))
         {
+            m_studentWorld->playSound(SOUND_GOT_GOODIE);
             m_studentWorld->subtractCrystal();
             m_studentWorld->increaseScore(50);
             setDead();
@@ -418,21 +463,27 @@ void Crystal::doSomething()
 
 // Goodie implementation
 Goodie::Goodie(int imageID, double startX, double startY, int dir, double size, StudentWorld* studentWorld, int scoreAmount)
-    : PickupableItem(imageID, startX, startY, dir, size), m_studentWorld(studentWorld), m_scoreAmount(scoreAmount)
+    : PickupableItem(imageID, startX, startY, dir, size), m_studentWorld(studentWorld), m_scoreAmount(scoreAmount), m_isVisible(true)
 {
+}
+bool Goodie::canBeMunched()
+{
+    return true;
 }
 void Goodie::doSomething()
 {
     if (isDead())
         return;
-    if (m_studentWorld->checkIfPlayerAt(getX(), getY()))
+    if (m_studentWorld->checkIfPlayerAt(getX(), getY()) && m_isVisible)
     {
+        m_studentWorld->playSound(SOUND_GOT_GOODIE);
         m_studentWorld->increaseScore(m_scoreAmount);
         updatePlayerStat();
         setDead();
         // play sound effect
     }
 }
+
 // Extra life goodie implementation
 ExtraLife::ExtraLife(double startX, double startY, int dir, double size, StudentWorld* studentWorld)
     : Goodie(IID_EXTRA_LIFE, startX, startY, dir, size, studentWorld, 1000), m_studentWorld(studentWorld)

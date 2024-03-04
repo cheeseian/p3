@@ -15,11 +15,13 @@ public:
     virtual int canMarbleThrough(); // 1 for Pit, 0 for everything else
     virtual int isCollideable();    // 2 for player/robot, 1 for wall/factory, 0 for everything else
     virtual bool canShootThrough(); // true for Pickupable itme, 0 everthing else
-    virtual int ammoAmount(); // defaulted 0 for everyone but player
+    virtual int ammoAmount();       // defaulted 0 for everyone but player
     virtual int getHealth();
     virtual void addHealth();
     virtual void addPeas(int num);
     virtual bool canControl(); // to identify player
+    virtual bool canBeMunched(); // to identify goodies for Thiefbots
+    virtual bool canMunch(); // to identify thiefbots
     virtual void recieveDamage();
     bool isDead();
     void setDead();
@@ -52,13 +54,14 @@ private:
 class Robot : public Actor
 {
 public:
-    Robot(int imageID, double startX, double startY, int dir, double size, StudentWorld* studentWorld);
+    Robot(int imageID, double startX, double startY, int dir, double size, StudentWorld *studentWorld);
     virtual int canWalkThrough();
     virtual int isCollideable();
     virtual void recieveDamage();
     bool isActiveTick();
+
 private:
-    StudentWorld* m_studentWorld;
+    StudentWorld *m_studentWorld;
     int m_hitPoints;
     int m_ticks;
     int m_tickCount;
@@ -69,26 +72,39 @@ class RageBot : public Robot
 public:
     RageBot(double startX, double startY, int dir, double size, StudentWorld *studentWorld);
     virtual void doSomething();
+
 private:
-    StudentWorld* m_studentWorld;
+    StudentWorld *m_studentWorld;
 };
 
 class ThiefBot : public Robot
 {
 public:
     ThiefBot(int imageID, double startX, double startY, int dir, double size, StudentWorld *studentWorld);
+    virtual void doSomething();
+    virtual bool canMunch();
+private:
+    int distanceBeforeTurning;
+    bool m_carryingGoodie;
+    StudentWorld* m_studentWorld;
 };
 
 class RegularThiefBot : public ThiefBot
 {
 public:
     RegularThiefBot(double startX, double startY, int dir, double size, StudentWorld *studentWorld);
+
+private:
+    int m_hitPoints;
 };
 
 class MeanThiefBot : public ThiefBot
 {
 public:
     MeanThiefBot(double startX, double startY, int dir, double size, StudentWorld *studentWorld);
+
+private:
+    int m_hitPoints;
 };
 
 class Wall : public Actor
@@ -127,10 +143,11 @@ private:
 class Exit : public Actor
 {
 public:
-    Exit(double startX, double startY, int dir, double size, StudentWorld* studentWorld);
+    Exit(double startX, double startY, int dir, double size, StudentWorld *studentWorld);
     virtual void doSomething();
+
 private:
-    StudentWorld* m_studentWorld;
+    StudentWorld *m_studentWorld;
     bool m_isVisible;
 };
 
@@ -147,12 +164,14 @@ private:
 class ThiefBotFactory : public Actor
 {
 public:
-    ThiefBotFactory(double startX, double startY, int dir, double size, bool isMean);
+    ThiefBotFactory(double startX, double startY, int dir, double size, bool isMean, StudentWorld* studentWorld);
     virtual int canWalkThrough();
     virtual int isCollideable();
+    virtual void doSomething();
 
 private:
     bool m_isMean;
+    StudentWorld* m_studentWorld;
 };
 
 class PickupableItem : public Actor
@@ -165,48 +184,55 @@ public:
 class Crystal : public PickupableItem
 {
 public:
-    Crystal(double startX, double startY, int dir, double size, StudentWorld* studentWorld);
+    Crystal(double startX, double startY, int dir, double size, StudentWorld *studentWorld);
     virtual void doSomething();
+
 private:
-    StudentWorld* m_studentWorld;
+    StudentWorld *m_studentWorld;
 };
 
 class Goodie : public PickupableItem
 {
 public:
-    Goodie(int imageID, double startX, double startY, int dir, double size, StudentWorld* studentWorld, int scoreAmount);
+    Goodie(int imageID, double startX, double startY, int dir, double size, StudentWorld *studentWorld, int scoreAmount);
     virtual void doSomething();
     virtual void updatePlayerStat() = 0;
+    virtual bool canBeMunched();
+
 private:
-    StudentWorld* m_studentWorld;
+    StudentWorld *m_studentWorld;
     int m_scoreAmount;
+    bool m_isVisible;
 };
 
 class ExtraLife : public Goodie
 {
 public:
-    ExtraLife(double startX, double startY, int dir, double size, StudentWorld* studentWorld);
+    ExtraLife(double startX, double startY, int dir, double size, StudentWorld *studentWorld);
     virtual void updatePlayerStat();
+
 private:
-    StudentWorld* m_studentWorld;
+    StudentWorld *m_studentWorld;
 };
 
 class RestoreHealth : public Goodie
 {
 public:
-    RestoreHealth(double startX, double startY, int dir, double size, StudentWorld* studentWorld);
+    RestoreHealth(double startX, double startY, int dir, double size, StudentWorld *studentWorld);
     virtual void updatePlayerStat();
+
 private:
-    StudentWorld* m_studentWorld;
+    StudentWorld *m_studentWorld;
 };
 
 class Ammo : public Goodie
 {
 public:
-    Ammo(double startX, double startY, int dir, double size, StudentWorld* studentWorld);
+    Ammo(double startX, double startY, int dir, double size, StudentWorld *studentWorld);
     virtual void updatePlayerStat();
+
 private:
-    StudentWorld* m_studentWorld;
+    StudentWorld *m_studentWorld;
 };
 
 #endif // ACTOR_H_

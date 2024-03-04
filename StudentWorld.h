@@ -31,6 +31,9 @@ public:
   void restoreHealth();
   int crystalsLeft();
   void subtractCrystal();
+  bool tryToMunch(double x, double y);
+  int countThiefBots(double x, double y);
+  void spawnThiefBot(double x, double y, bool isMean);
   void setDisplayText();
   void escapePressed();
   void levelComplete();

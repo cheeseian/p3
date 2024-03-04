@@ -1,6 +1,6 @@
 #include "StudentWorld.h"
 #include "GameConstants.h"
-#include <sstream>  // defines the type std::ostringstream
+#include <sstream> // defines the type std::ostringstream
 #include <iomanip>
 #include <string>
 using namespace std;
@@ -77,10 +77,10 @@ bool StudentWorld::tryMoveMarble(Actor *marble, int direction)
         {
             // Checking for Actor that is right of the marble
             if ((*it)->canMarbleThrough() == 0) // can't move through wall/robot/factory (0)
-                {
-                    cerr << "can't move marble" << endl;
-                    return false;
-                }
+            {
+                cerr << "can't move marble" << endl;
+                return false;
+            }
         }
         it++;
     }
@@ -98,7 +98,7 @@ bool StudentWorld::checkIfMarbleAt(double x, double y)
     {
         if ((*it)->getX() == x && (*it)->getY() == y)
         {
-            if((*it)->canWalkThrough() == 2) // is Marble
+            if ((*it)->canWalkThrough() == 2) // is Marble
             {
                 (*it)->setDead(); // kill marble
                 return true;
@@ -158,11 +158,11 @@ bool StudentWorld::checkPeaSquare(double x, double y)
     {
         if ((*it)->getX() == x && (*it)->getY() == y)
         {
-            if((*it)->isCollideable() == 1) // hits a wall or factory
+            if ((*it)->isCollideable() == 1) // hits a wall or factory
             {
                 return true;
             }
-            if((*it)->isCollideable() == 2) // hits a player or robot or marble
+            if ((*it)->isCollideable() == 2) // hits a player or robot or marble
             {
                 (*it)->recieveDamage();
                 return true;
@@ -183,7 +183,7 @@ bool StudentWorld::checkIfPlayerAt(double x, double y)
     {
         if ((*it)->canControl())
         {
-            if((*it)->getX() == x && (*it)->getY() == y)
+            if ((*it)->getX() == x && (*it)->getY() == y)
                 return true;
         }
         it++;
@@ -200,14 +200,14 @@ bool StudentWorld::playerInView(double x, double y, int direction)
         int posX, posY;
         getOffsets(posX, posY, direction);
         posX *= multiplier; // allows us to step in direction 1 by 1
-        posY *= multiplier; 
+        posY *= multiplier;
 
         vector<Actor *>::iterator it;
         it = actors.begin();
         while (it != actors.end())
         {
             // finding Actors in line of sight
-            if ((*it)->getX() == x + posX && (*it)->getY() == y + posY) 
+            if ((*it)->getX() == x + posX && (*it)->getY() == y + posY)
             {
                 if (!(*it)->canShootThrough())
                 {
@@ -267,6 +267,65 @@ void StudentWorld::subtractCrystal()
 {
     m_crystalsLeft--;
 }
+// for Thiefbot to try to munch goodies
+bool StudentWorld::tryToMunch(double x, double y)
+{
+    vector<Actor *>::iterator it;
+    it = actors.begin();
+
+    while (it != actors.end())
+    {
+        if ((*it)->getX() == x && (*it)->getY() == y && (*it)->canBeMunched())
+        {
+            if (randInt(1, 10) == 1) // 1 in 10 chance to munch goodie
+            {
+                playSound(SOUND_ROBOT_MUNCH);
+                (*it)->setDead();
+                return true;
+            }
+        }
+        it++;
+    }
+    return false;
+}
+// counts thief bots in area
+int StudentWorld::countThiefBots(double x, double y)
+{
+    vector<Actor *>::iterator it;
+    it = actors.begin();
+
+    while (it != actors.end())
+    {
+        if ((*it)->getX() == x && (*it)->getY() == y && (*it)->canMunch())
+        {
+            return 200; // if a thief bot is on top of factory, can't spawn so return something big
+        }
+        it++;
+    }
+
+    int count = 0;
+    for (int i = x - 3; i < x + 3; i++)
+    {
+        for (int j = y - 3; j < y + 3; j++)
+        {
+            vector<Actor *>::iterator it;
+            it = actors.begin();
+
+            while (it != actors.end())
+            {
+                if ((*it)->getX() == i && (*it)->getY() == j && (*it)->canMunch())
+                {
+                    count++;
+                }
+                it++;
+            }
+        }
+    }
+    return count;
+}
+// spawns a thief bot
+void StudentWorld::spawnThiefBot(double x, double y, bool m_isMean)
+{}
 // Updates the on screen text
 void StudentWorld::setDisplayText()
 {
@@ -289,12 +348,12 @@ void StudentWorld::setDisplayText()
         }
         it++;
     }
-    int health = ((hp * 100 )/ 20); 
+    int health = ((hp * 100) / 20);
 
     ostringstream oss;
     oss << "Score: ";
     oss.fill('0');
-	oss << setw(7) << score;
+    oss << setw(7) << score;
     oss << "  Level: ";
     oss.fill('0');
     oss << setw(2) << level;
@@ -311,7 +370,7 @@ void StudentWorld::setDisplayText()
     oss << "  Bonus: ";
     oss.fill(' ');
     oss << setw(4) << m_bonus;
-	string s = oss.str();
+    string s = oss.str();
 
     setGameStatText(s); // calls our provided GameWorld::setGameStatText
 }
@@ -321,7 +380,7 @@ void StudentWorld::deleteDead()
     vector<Actor *>::iterator it;
     it = actors.begin();
     while (it != actors.end())
-    {   
+    {
         if ((*it)->isDead())
         {
             (*it)->setVisible(false);
@@ -331,7 +390,6 @@ void StudentWorld::deleteDead()
         }
         it++;
     }
-
 }
 // If escape is pressed, lose life and restart level
 void StudentWorld::escapePressed()
@@ -353,12 +411,11 @@ string StudentWorld::getLevelString()
     ostringstream osslev;
     osslev << "level";
     osslev.fill('0');
-	osslev << setw(2) << level;
+    osslev << setw(2) << level;
     osslev << ".txt";
 
-	return osslev.str();
+    return osslev.str();
 }
-
 
 int StudentWorld::init()
 {
@@ -366,7 +423,7 @@ int StudentWorld::init()
     m_levelComplete = false;
 
     // Loading current level
-    //string curLevel = "level04.txt";
+    // string curLevel = "level04.txt";
     string curLevel = getLevelString();
     Level::LoadResult result = m_lev.loadLevel(curLevel);
     if (result == Level::load_fail_file_not_found)
@@ -410,13 +467,13 @@ int StudentWorld::init()
                 }
                 case Level::thiefbot_factory:
                 {
-                    ThiefBotFactory *botFactory = new ThiefBotFactory(x, y, -1, 1, false);
+                    ThiefBotFactory *botFactory = new ThiefBotFactory(x, y, -1, 1, false, this);
                     actors.push_back(botFactory);
                     break;
                 }
                 case Level::mean_thiefbot_factory:
                 {
-                    ThiefBotFactory *botFactory = new ThiefBotFactory(x, y, -1, 1, true);
+                    ThiefBotFactory *botFactory = new ThiefBotFactory(x, y, -1, 1, true, this);
                     actors.push_back(botFactory);
                     break;
                 }
@@ -472,7 +529,7 @@ int StudentWorld::init()
 }
 
 int StudentWorld::move()
-{   
+{
     // check if escape pressed
     if (m_quitLevel)
         return GWSTATUS_PLAYER_DIED;
@@ -506,12 +563,11 @@ int StudentWorld::move()
 
     // remove all dead actors
     deleteDead();
-    
+
     // decrease bonus by 1
     if (m_bonus > 0)
         m_bonus--;
 
-    
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -526,5 +582,3 @@ void StudentWorld::cleanUp()
         it = actors.erase(it);
     }
 }
-
-
